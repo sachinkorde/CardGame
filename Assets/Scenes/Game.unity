@@ -425,6 +425,7 @@ MonoBehaviour:
   selectedCard: {fileID: 0}
   drawBtn: {fileID: 935486973}
   gamePanel: {fileID: 874393042}
+  gamePanelText: {fileID: 1385703458}
 --- !u!4 &495988158
 Transform:
   m_ObjectHideFlags: 0
@@ -878,7 +879,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &874393043
 RectTransform:
   m_ObjectHideFlags: 0
