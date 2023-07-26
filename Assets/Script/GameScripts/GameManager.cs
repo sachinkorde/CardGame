@@ -5,22 +5,24 @@ using TMPro;
 using DG.Tweening;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
+using Photon.Pun;
 
-public class GameManager : MonoBehaviour
+public class GameManager : MonoBehaviourPunCallbacks
 {
     public static GameManager instance;
 
     public List<string> superHeroNames = new() { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z" };
     public List<string> cardNames = new() { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z" };
-    
+
     public GameObject cardPrefab;
     //public GameObject superHeroPrefab;
-    
+
     public Transform playerHandTransform;
     public Transform opponentHandTransform;
     public Transform deck;
-    
+
     public TMP_Text winText;
+    public TMP_Text gamePanelText;
 
     [SerializeField] private List<string> playerSuperCards = new();
     [SerializeField] private List<string> opponentSuperCards = new();
@@ -36,7 +38,12 @@ public class GameManager : MonoBehaviour
 
     [SerializeField] private bool isPlayerTurn = true;
 
-    public Card selectedCard;
+    public List<GameObject> playerSuperCardsObj;
+    public List<GameObject> playerNormalCardsObj;
+    public List<GameObject> opponentSuperCardObj;
+    public List<GameObject> opponentNormalCardsObj;
+
+    //public Card selectedCard;
     public Button drawBtn;
     public GameObject gamePanel;
 
@@ -48,6 +55,16 @@ public class GameManager : MonoBehaviour
     void Start()
     {
         InitializeGame();
+
+        if(photonView.IsMine)
+        {
+            Debug.Log("photon mine");
+
+            /*for(int i = 0; i < playerNormalCardsObj.Count; i++) 
+            { 
+                playerSuperCardsObj[i]. = null; 
+            }*/
+        }
     }
 
     private void Shuffle<T>(List<T> list)
@@ -93,6 +110,7 @@ public class GameManager : MonoBehaviour
         {
             GameObject cardObj = Instantiate(cardPrefab, playerHandTransform);
             Card card = cardObj.GetComponent<Card>();
+            playerSuperCardsObj.Add(cardObj);
             card.CardType = CardType.SuperCard;
             card.Initialize(cardName);
         }
@@ -105,6 +123,7 @@ public class GameManager : MonoBehaviour
                 {
                     GameObject cardObj = Instantiate(cardPrefab, playerHandTransform);
                     Card card = cardObj.GetComponent<Card>();
+                    playerNormalCardsObj.Add(cardObj);
                     card.CardType = CardType.NormalCard;
                     card.Initialize(cardName);
                 }
@@ -116,6 +135,7 @@ public class GameManager : MonoBehaviour
         {
             GameObject cardObj = Instantiate(cardPrefab, opponentHandTransform);
             Card card = cardObj.GetComponent<Card>();
+            opponentSuperCardObj.Add(cardObj);
             card.CardType = CardType.SuperCard;
             card.Initialize(cardName);
         }
@@ -124,16 +144,29 @@ public class GameManager : MonoBehaviour
         {
             for (int i = 0; i < opponentSuperCards.Count; i++)
             {
-                if(cardName != opponentSuperCards[i])
+                if (cardName != opponentSuperCards[i])
                 {
                     GameObject cardObj = Instantiate(cardPrefab, opponentHandTransform);
                     Card card = cardObj.GetComponent<Card>();
+                    opponentNormalCardsObj.Add(cardObj);
                     card.CardType = CardType.NormalCard;
                     card.Initialize(cardName);
                 }
                 break;
             }
         }
+    }
+
+    IEnumerator MoveCard(GameObject card, Transform destination, float t)
+    {
+        card.transform.DOLocalMove(destination.localPosition, t);
+        yield return new WaitForSeconds(t);
+        OnCompleteTransform(card, destination);
+    }
+
+    void OnCompleteTransform(GameObject card, Transform destination)
+    {
+        card.transform.SetParent(destination);
     }
 
     public void DrawCard()
@@ -155,11 +188,13 @@ public class GameManager : MonoBehaviour
                 {
                     playerHand.Add(drawnCard);
 
-                    GameObject cardObj = Instantiate(cardPrefab, playerHandTransform);
+                    //GameObject cardObj = Instantiate(cardPrefab, playerHandTransform);
+                    GameObject cardObj = Instantiate(cardPrefab, deck);
                     Card card = cardObj.GetComponent<Card>();
 
-                    /*cardObj.transform.DOLocalMove(playerHandTransform.localPosition, 0.35f);
-                    cardObj.transform.SetParent(playerHandTransform);*/
+                    StartCoroutine(MoveCard(cardObj, playerHandTransform, 0.45f));
+                    //cardObj.transform.DOLocalMove(playerHandTransform.localPosition, 0.35f);
+                    //cardObj.transform.SetParent(playerHandTransform);
 
                     card.CardType = CardType.NormalCard;
                     card.Initialize(drawnCard);
@@ -168,21 +203,10 @@ public class GameManager : MonoBehaviour
                     {
                         for (int i = 0; i < playerSuperCards.Count; i++)
                         {
-                            //Debug.Log(playerSuperCards[i]);
-
                             if (playerSuperCards[i] == card.CardName)
                             {
                                 playerSuperCards.RemoveAt(i);
-                                //playerHandTransform.GetChild(i).gameObject.SetActive(false);
-
-                                /*for (int j = 0; j < playerHandTransform.childCount; j++)
-                                {
-                                    Card childCard = playerHandTransform.GetChild(j).GetComponent<Card>();
-                                    if(playerSuperCards[i] == childCard.CardName)
-                                    {
-                                        playerHandTransform.GetChild(j).gameObject.SetActive(false);
-                                    }
-                                }*/
+                                playerSuperCardsObj[i].SetActive(false);
                             }
 
                             if (playerSuperCards.Count == 0)
@@ -220,8 +244,12 @@ public class GameManager : MonoBehaviour
                 {
                     opponentHand.Add(drawnCard);
                     Debug.Log(deckCards.Count + ": DeckCount");
-                    GameObject cardObj = Instantiate(cardPrefab, opponentHandTransform);
+                    //GameObject cardObj = Instantiate(cardPrefab, opponentHandTransform);
+                    GameObject cardObj = Instantiate(cardPrefab, deck);
                     Card card = cardObj.GetComponent<Card>();
+
+                    StartCoroutine(MoveCard(cardObj, opponentHandTransform, 0.45f));
+
                     card.CardType = CardType.NormalCard;
                     card.Initialize(drawnCard);
                     deckCards.Remove(drawnCard);
@@ -230,21 +258,10 @@ public class GameManager : MonoBehaviour
                     {
                         for (int i = 0; i < opponentSuperCards.Count; i++)
                         {
-                            //Debug.Log(opponentSuperCards[i]);
-
                             if (opponentSuperCards[i] == card.CardName)
                             {
                                 opponentSuperCards.RemoveAt(i);
-                                //opponentHandTransform.GetChild(i).gameObject.SetActive(false);
-
-                                /*for (int j = 0; j < opponentHandTransform.childCount; j++)
-                                {
-                                    Card childCard = opponentHandTransform.GetChild(j).GetComponent<Card>();
-                                    if (opponentSuperCards[i] == childCard.CardName)
-                                    {
-                                        opponentHandTransform.GetChild(j).gameObject.SetActive(false);
-                                    }
-                                }*/
+                                opponentSuperCardObj[i].SetActive(false);
                             }
 
                             if (opponentSuperCards.Count == 0)
@@ -252,7 +269,6 @@ public class GameManager : MonoBehaviour
                                 Debug.Log("opponent Win");
                                 drawBtn.enabled = false;
                                 drawBtn.transform.GetChild(0).GetComponent<TMP_Text>().text = "Opponent Win";
-
                                 gamePanel.SetActive(true);
                                 gamePanelText.text = "Opponent Win..!";
                             }
@@ -270,20 +286,10 @@ public class GameManager : MonoBehaviour
         EndTurn();
     }
 
-    public TMP_Text gamePanelText;
-
     public void ReloadScene()
     {
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
-
-    /*public void WinLogic(Card card)
-    {
-        if (card == null)
-        {
-            if()
-        }
-    }*/
 
     public void EndTurn()
     {

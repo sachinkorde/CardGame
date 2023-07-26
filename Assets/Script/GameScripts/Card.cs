@@ -2,6 +2,7 @@ using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using Photon.Pun;
 
 public enum CardType
 {
@@ -10,7 +11,7 @@ public enum CardType
     SuperCard
 }
 
-public class Card : MonoBehaviour
+public class Card : MonoBehaviourPunCallbacks
 {
     public CardType CardType = CardType.None;
 
@@ -24,7 +25,23 @@ public class Card : MonoBehaviour
         CardName = cardName;
         cardNameText.text = cardName;
 
-        if(CardType == CardType.NormalCard)
+        /*if (photonView.IsMine)
+        {
+            if (CardType == CardType.NormalCard)
+            {
+                gameObject.GetComponent<Image>().sprite = cardImage[0].sprite;
+            }
+            else
+            {
+                gameObject.GetComponent<Image>().sprite = cardImage[1].sprite;
+            }
+        }
+        else
+        {
+            gameObject.GetComponent<Image>().color = Color.white;
+        }*/
+
+        if (CardType == CardType.NormalCard)
         {
             gameObject.GetComponent<Image>().sprite = cardImage[0].sprite;
         }
