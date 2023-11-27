@@ -6,6 +6,8 @@ using DG.Tweening;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using Photon.Pun;
+using Photon.Realtime;
+using JetBrains.Annotations;
 
 public class GameManager : MonoBehaviourPunCallbacks
 {
@@ -47,16 +49,33 @@ public class GameManager : MonoBehaviourPunCallbacks
     public Button drawBtn;
     public GameObject gamePanel;
 
+    //photon Setup
+    public GameObject playerPrefab;
+    public GameObject opponentPrefab;
+    public PlayerInfo playerInfo;
+    public PlayerSetup playerSetup;
+    public Transform opponentTransform;
+    public Transform localPlayerTransform;
+    //PhotonView photonView;
+
     void Awake()
     {
         instance = this;
     }
 
+    public override void OnConnectedToMaster()
+    {
+        Debug.Log("Connected to Photon Master Server");
+    }
+
     void Start()
     {
-        InitializeGame();
+        //photonView = GetComponent<PhotonView>();
 
-        if(photonView.IsMine)
+        PhotonNetwork.ConnectUsingSettings();
+
+        PlayerEnteredRoom();
+        if (photonView.IsMine)
         {
             Debug.Log("photon mine");
 
@@ -64,6 +83,7 @@ public class GameManager : MonoBehaviourPunCallbacks
             { 
                 playerSuperCardsObj[i]. = null; 
             }*/
+
         }
     }
 
@@ -106,55 +126,92 @@ public class GameManager : MonoBehaviourPunCallbacks
             cardObj.SetActive(false);
         }
 
-        foreach (string cardName in playerSuperCards)
+        //f (photonView.IsMine)
         {
-            GameObject cardObj = Instantiate(cardPrefab, playerHandTransform);
-            Card card = cardObj.GetComponent<Card>();
-            playerSuperCardsObj.Add(cardObj);
-            card.CardType = CardType.SuperCard;
-            card.Initialize(cardName);
-        }
-
-        foreach (string cardName in playerNormalCards)
-        {
-            for (int i = 0; i < playerSuperCards.Count; i++)
+            foreach (string cardName in playerSuperCards)
             {
-                if (cardName != playerSuperCards[i])
+                GameObject cardObj = Instantiate(cardPrefab, playerHandTransform);
+                Card card = cardObj.GetComponent<Card>();
+                playerSuperCardsObj.Add(cardObj);
+                card.CardType = CardType.SuperCard;
+                card.Initialize(cardName);
+            }
+
+            foreach (string cardName in playerNormalCards)
+            {
+                for (int i = 0; i < playerSuperCards.Count; i++)
                 {
-                    GameObject cardObj = Instantiate(cardPrefab, playerHandTransform);
-                    Card card = cardObj.GetComponent<Card>();
-                    playerNormalCardsObj.Add(cardObj);
-                    card.CardType = CardType.NormalCard;
-                    card.Initialize(cardName);
+                    if (cardName != playerSuperCards[i])
+                    {
+                        GameObject cardObj = Instantiate(cardPrefab, playerHandTransform);
+                        Card card = cardObj.GetComponent<Card>();
+                        playerNormalCardsObj.Add(cardObj);
+                        card.CardType = CardType.NormalCard;
+                        card.Initialize(cardName);
+                    }
+                    break;
                 }
-                break;
             }
         }
-
-        foreach (string cardName in opponentSuperCards)
-        {
-            GameObject cardObj = Instantiate(cardPrefab, opponentHandTransform);
-            Card card = cardObj.GetComponent<Card>();
-            opponentSuperCardObj.Add(cardObj);
-            card.CardType = CardType.SuperCard;
-            card.Initialize(cardName);
-        }
-
-        foreach (string cardName in opponentNormalCards)
-        {
-            for (int i = 0; i < opponentSuperCards.Count; i++)
+       // else if (!photonView.IsMine) 
+        //{
+            foreach (string cardName in opponentSuperCards)
             {
-                if (cardName != opponentSuperCards[i])
-                {
-                    GameObject cardObj = Instantiate(cardPrefab, opponentHandTransform);
-                    Card card = cardObj.GetComponent<Card>();
-                    opponentNormalCardsObj.Add(cardObj);
-                    card.CardType = CardType.NormalCard;
-                    card.Initialize(cardName);
-                }
-                break;
+                GameObject cardObj = Instantiate(cardPrefab, opponentHandTransform);
+                Card card = cardObj.GetComponent<Card>();
+                opponentSuperCardObj.Add(cardObj);
+                card.CardType = CardType.SuperCard;
+                card.Initialize(cardName);
             }
+
+            foreach (string cardName in opponentNormalCards)
+            {
+                for (int i = 0; i < opponentSuperCards.Count; i++)
+                {
+                    if (cardName != opponentSuperCards[i])
+                    {
+                        GameObject cardObj = Instantiate(cardPrefab, opponentHandTransform);
+                        Card card = cardObj.GetComponent<Card>();
+                        opponentNormalCardsObj.Add(cardObj);
+                        card.CardType = CardType.NormalCard;
+                        card.Initialize(cardName);
+                    }
+                    break;
+                }
+            }
+        //}
+    }
+
+    public void PlayerEnteredRoom()
+    {
+
+        Debug.Log("OnPlayerEnteredRoom");
+
+        InitializeGame();
+        InstantiatePlayer();  
+    }
+
+    private void InstantiatePlayer()
+    {
+        if (photonView.IsMine)
+        {
+            GameObject tmpPlayer = PhotonNetwork.Instantiate(playerPrefab.name, Vector3.zero, Quaternion.identity);
+            tmpPlayer.transform.SetParent(localPlayerTransform);
+            tmpPlayer.transform.localScale = Vector3.one;
+            tmpPlayer.transform.localPosition = Vector3.one;
         }
+        else
+        {
+            GameObject tmpPlayer = PhotonNetwork.Instantiate(opponentPrefab.name, Vector3.zero, Quaternion.identity);
+            tmpPlayer.transform.SetParent(opponentTransform);
+            tmpPlayer.transform.localScale = Vector3.one;
+            tmpPlayer.transform.localPosition = Vector3.one;
+        }
+        
+        //tmpPlayer.transform.GetComponent<RectTransform>().anchoredPosition = new Vector2(0.0f, 0.0f);
+        /*tmpPlayer.transform.GetComponent<RectTransform>().anchorMin = new Vector2(0.5f, 0.5f);
+        tmpPlayer.transform.GetComponent<RectTransform>().anchorMax = new Vector2(0.5f, 0.5f);
+        tmpPlayer.transform.GetComponent<RectTransform>().pivot = new Vector2(0.0f, 0.0f);*/
     }
 
     IEnumerator MoveCard(GameObject card, Transform destination, float t)

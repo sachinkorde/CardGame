@@ -24,6 +24,9 @@ public class RummyNetWorkScript : MonoBehaviourPunCallbacks
 
     private Dictionary<string, RoomInfo> roomListData;
     private Dictionary<string, GameObject> roomListGameObject;
+    private Dictionary<int, GameObject> playerListGameObject;
+
+    public Button playBtn;
 
     private void Awake()
     {
@@ -35,6 +38,7 @@ public class RummyNetWorkScript : MonoBehaviourPunCallbacks
         GamePanelHandler(gamePanels[0]);
         roomListData = new Dictionary<string, RoomInfo>();
         roomListGameObject = new Dictionary<string, GameObject>();
+        playerListGameObject = new Dictionary<int, GameObject>();
     }
 
     #region Ui_Methods
@@ -97,13 +101,15 @@ public class RummyNetWorkScript : MonoBehaviourPunCallbacks
     void CreateRoomProcess()
     {
         RoomOptions roomOptions = new RoomOptions();
-        roomOptions.MaxPlayers = (byte) int.Parse(maxPlayers.text);
+        //roomOptions.MaxPlayers = (byte) int.Parse(maxPlayers.text);
+        roomOptions.MaxPlayers = 2;
 
         PhotonNetwork.CreateRoom(roomNameText.text);
     }
 
     public void OnClickCancel()
     {
+        PhotonNetwork.Disconnect();
         GamePanelHandler(gamePanels[0]);
     }
 
@@ -138,22 +144,44 @@ public class RummyNetWorkScript : MonoBehaviourPunCallbacks
     public void ClearRoomList()
     {
         if(roomListGameObject.Count  > 0)
-        foreach (var item in roomListGameObject.Values)
         {
-            Destroy(item);
+            foreach (var item in roomListGameObject.Values)
+            {
+                Destroy(item);
+            }
+            roomListGameObject.Clear();
         }
-        roomListGameObject.Clear();
     }
 
     public void BackFromRoomList()
     {
+        Debug.Log("Back Button Clicked");
+        if (PhotonNetwork.InRoom)
+        {
+            Debug.Log("Player in Lobbby");
+            PhotonNetwork.LeaveRoom();
+            ActiveConnectingPanel();
+            Invoke(nameof(CreateRoomPanel), 0.5f);
+        }
+    }
+
+    public void BackFromRoom()
+    {
         if (PhotonNetwork.InLobby)
         {
             PhotonNetwork.LeaveLobby();
+
+            Debug.Log("Room closed ");
             ActiveConnectingPanel();
 
             Invoke(nameof(CreateRoomPanel), 0.5f);
         }
+    }
+
+    public void OnJoinRandomRoomButtonClicked()
+    {
+        ActiveConnectingPanel();
+        PhotonNetwork.JoinRandomOrCreateRoom();
     }
 
     #endregion
@@ -174,12 +202,14 @@ public class RummyNetWorkScript : MonoBehaviourPunCallbacks
 
     public override void OnCreatedRoom()
     {
+        Debug.Log("OnCreatedRoom");
         Debug.Log(PhotonNetwork.CurrentRoom.Name + " : Room Created");
         GamePanelHandler(gamePanels[3]);
     }
 
     public override void OnJoinedLobby()
     {
+        Debug.Log("OnJoinedLobby");
         Debug.Log(PhotonNetwork.LocalPlayer.NickName + " : player joined room");
     }
 
@@ -191,6 +221,7 @@ public class RummyNetWorkScript : MonoBehaviourPunCallbacks
         foreach (RoomInfo room in roomList)
         {
             Debug.Log("Room Name : " + room.Name);
+
             if(!room.IsOpen || !room.IsVisible || room.RemovedFromList)
             {
                 if (roomListData.ContainsKey(room.Name))
@@ -221,23 +252,35 @@ public class RummyNetWorkScript : MonoBehaviourPunCallbacks
             roomListObject.transform.GetChild(1).transform.GetComponent<TMP_Text>().text = roomItems.PlayerCount + "/" + roomItems.MaxPlayers;
             roomListObject.transform.GetChild(2).transform.GetComponent<Button>().onClick.AddListener(() => RoomJoinFromList(roomItems.Name));
             roomListGameObject.Add(roomItems.Name, roomListObject);
+
+            Debug.Log(roomItems.Name +  "  Reached at roomList update");
         }
     }
 
     public override void OnLeftLobby()
     {
+        Debug.Log("OnLeftLobby");
         ClearRoomList();
         roomListData.Clear();
     }
 
     public override void OnJoinedRoom()
     {
+        Debug.Log("OnJoinedRoom");
         GamePanelHandler(gamePanels[6]);
+
+        if(playerListGameObject == null)
+        {
+            playerListGameObject = new Dictionary<int, GameObject>();
+        }
+        playerListGameObject.Clear();
 
         foreach (Player p in PhotonNetwork.PlayerList)
         {
             GameObject playerListItem = Instantiate(playerListPrefab, playerListPrefabParent.transform);
             playerListItem.transform.localScale = Vector3.one;
+
+            Debug.Log(playerListItem.name + "   playerList name");
 
             playerListItem.transform.GetChild(0).transform.GetComponent<TMP_Text>().text = p.NickName;
 
@@ -249,13 +292,96 @@ public class RummyNetWorkScript : MonoBehaviourPunCallbacks
             {
                 playerListItem.transform.GetChild(1).gameObject.SetActive(false);
             }
+
+            playerListGameObject.Add(p.ActorNumber, playerListItem);
         }
+    }
+
+    private int playersInRoom = 0;
+
+    public override void OnPlayerEnteredRoom(Player newPlayer)
+    {
+        Debug.Log("OnPlayerEnteredRoom");
+
+        GameObject playerListItem = Instantiate(playerListPrefab, playerListPrefabParent.transform);
+        playerListItem.transform.localScale = Vector3.one;
+
+        playerListItem.transform.GetChild(0).transform.GetComponent<TMP_Text>().text = newPlayer.NickName;
+
+        if (newPlayer.ActorNumber == PhotonNetwork.LocalPlayer.ActorNumber)
+        {
+            playerListItem.transform.GetChild(1).gameObject.SetActive(true);
+        }
+        else
+        {
+            playerListItem.transform.GetChild(1).gameObject.SetActive(false);
+        }
+
+        playerListGameObject.Add(newPlayer.ActorNumber, playerListItem);
+        playersInRoom++;
+
+
+        Debug.Log(playersInRoom + "Player Count OnPlayerEnteredRoom");
+
+        /*if (playersInRoom == PhotonNetwork.CurrentRoom.MaxPlayers)
+        {
+            if (PhotonNetwork.IsMasterClient)
+            {
+                playBtn.gameObject.SetActive(true);
+            }
+        }
+        else
+        {
+            playBtn.gameObject.SetActive(false);
+        }*/
+    }
+
+    public void OnPlayButtonClick()
+    {
+        if (PhotonNetwork.IsMasterClient)
+        {
+            OnStartGameButtonClicked();
+        }
+    }
+
+    public void OnStartGameButtonClicked()
+    {
+        PhotonNetwork.CurrentRoom.IsOpen = false;
+        PhotonNetwork.CurrentRoom.IsVisible = false;
+
+        PhotonNetwork.LoadLevel("Game");
+    }
+
+    public override void OnPlayerLeftRoom(Player otherPlayer)
+    {
+        playerListGameObject.Remove(otherPlayer.ActorNumber);
+        Destroy(playerListGameObject[otherPlayer.ActorNumber]);
+
+
+        Debug.Log("Player left room");
+    }
+
+    public override void OnLeftRoom()
+    {
+        foreach (GameObject item in playerListGameObject.Values)
+        {
+            Destroy(item);
+        }
+
+        ActiveConnectingPanel();
+        Invoke(nameof(LoginPanelCalled), 0.35f);
+    }
+
+    void LoginPanelCalled()
+    {
+        GamePanelHandler(gamePanels[0]);
     }
     #endregion
 
     public TMP_Text loading_txt, dots_txt;
     public float time, loading_time;
     public bool isConnecting = false;
+
     public void Update()
     {
         ConnectionStatusText.text = connectionStatusMessage + PhotonNetwork.NetworkClientState;

@@ -3306,10 +3306,11 @@ MonoBehaviour:
   - {fileID: 302980494}
   - {fileID: 969819179}
   - {fileID: 899095785}
-  roomListPrefab: {fileID: 6266853101107354242, guid: c86f0f583ed2ce64e882d04030635193, type: 3}
+  roomListPrefab: {fileID: 114706, guid: 03c5e15309335324fba99d68e38cb08b, type: 3}
   roomInstantiateParent: {fileID: 1082558749}
   playerListPrefab: {fileID: 1148862213177704259, guid: 89aa8bf351e427748b15edde1d18c09f, type: 3}
   playerListPrefabParent: {fileID: 1154132909}
+  playBtn: {fileID: 1549007639}
   loading_txt: {fileID: 98420843}
   dots_txt: {fileID: 657338047}
   time: 0
@@ -3952,7 +3953,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 847853082}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 759675459}
+        m_TargetAssemblyTypeName: RummyNetWorkScript, Assembly-CSharp
+        m_MethodName: OnJoinRandomRoomButtonClicked
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &847853082
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4626,7 +4639,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: -1251, y: -413.25}
+  m_SizeDelta: {x: -1251, y: -245.75836}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1082558751
 MonoBehaviour:
@@ -4704,7 +4717,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: -1251, y: -413.25}
+  m_SizeDelta: {x: -1251, y: -245.75836}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1154132911
 MonoBehaviour:
@@ -6436,7 +6449,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 759675459}
         m_TargetAssemblyTypeName: RummyNetWorkScript, Assembly-CSharp
-        m_MethodName: BackFromRoomList
+        m_MethodName: OnPlayButtonClick
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -7549,7 +7562,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 759675459}
         m_TargetAssemblyTypeName: RummyNetWorkScript, Assembly-CSharp
-        m_MethodName: BackFromRoomList
+        m_MethodName: BackFromRoom
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}

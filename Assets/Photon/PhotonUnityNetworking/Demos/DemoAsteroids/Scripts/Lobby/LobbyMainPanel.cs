@@ -121,6 +121,7 @@ namespace Photon.Pun.Demo.Asteroids
                 GameObject entry = Instantiate(PlayerListEntryPrefab);
                 entry.transform.SetParent(InsideRoomPanel.transform);
                 entry.transform.localScale = Vector3.one;
+                entry.transform.localPosition = Vector3.one;
                 entry.GetComponent<PlayerListEntry>().Initialize(p.ActorNumber, p.NickName);
 
                 object isPlayerReady;
@@ -159,6 +160,7 @@ namespace Photon.Pun.Demo.Asteroids
             GameObject entry = Instantiate(PlayerListEntryPrefab);
             entry.transform.SetParent(InsideRoomPanel.transform);
             entry.transform.localScale = Vector3.one;
+            entry.transform.localPosition = Vector3.one;
             entry.GetComponent<PlayerListEntry>().Initialize(newPlayer.ActorNumber, newPlayer.NickName);
 
             playerListEntries.Add(newPlayer.ActorNumber, entry);
@@ -272,8 +274,8 @@ namespace Photon.Pun.Demo.Asteroids
             PhotonNetwork.CurrentRoom.IsOpen = false;
             PhotonNetwork.CurrentRoom.IsVisible = false;
 
-            //PhotonNetwork.LoadLevel("DemoAsteroids-GameScene");
-            PhotonNetwork.LoadLevel("Game");
+            PhotonNetwork.LoadLevel("DemoAsteroids-GameScene");
+            //PhotonNetwork.LoadLevel("Game");
         }
 
         #endregion
@@ -364,6 +366,7 @@ namespace Photon.Pun.Demo.Asteroids
                 GameObject entry = Instantiate(RoomListEntryPrefab);
                 entry.transform.SetParent(RoomListContent.transform);
                 entry.transform.localScale = Vector3.one;
+                entry.transform.localPosition = Vector3.one;
                 entry.GetComponent<RoomListEntry>().Initialize(info.Name, (byte)info.PlayerCount, (byte)info.MaxPlayers);
 
                 roomListEntries.Add(info.Name, entry);

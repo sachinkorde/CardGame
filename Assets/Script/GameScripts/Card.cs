@@ -20,12 +20,32 @@ public class Card : MonoBehaviourPunCallbacks
     public TMP_Text cardNameText;
     public Image[] cardImage;
 
+    void Start()
+    {
+        PhotonNetwork.ConnectUsingSettings();
+    }
+
+    public override void OnConnectedToMaster()
+    {
+        Debug.Log("Connected to Photon Master Server");
+
+    }
     public void Initialize(string cardName)
     {
         CardName = cardName;
+
+        if (photonView.IsMine)
+        {
+            cardNameText.gameObject.SetActive(true);
+        }
+        else
+        {
+            cardNameText.gameObject.SetActive(false);
+        }
+
         cardNameText.text = cardName;
 
-        /*if (photonView.IsMine)
+        if (photonView.IsMine)
         {
             if (CardType == CardType.NormalCard)
             {
@@ -39,7 +59,7 @@ public class Card : MonoBehaviourPunCallbacks
         else
         {
             gameObject.GetComponent<Image>().color = Color.white;
-        }*/
+        }
 
         if (CardType == CardType.NormalCard)
         {
